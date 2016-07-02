@@ -15,7 +15,7 @@ function handleStringUrl(req, resp)  {
     var orig = "https://freecodecamp-url-asai95.c9users.io/"                                   // add this to short url when displaying
     str.shift()
     str = str.join("")                                                                         // now we have url with http or https prefix: easier to pass to database
-    MongoClient.connect("mongodb://localhost:27017/url", (err, db) => {
+    MongoClient.connect(process.env.MONGODB_URI, (err, db) => {
         if (!err && validUrl(url)) {                                                           // check if url is valid
             db.collection("urls").find().limit(1).sort({$natural: -1}).toArray((err, doc) => { // we should get latest entry
             if (!err) {                                                                        // to determine what value of "short-url" will be next
@@ -40,14 +40,14 @@ function handleStringUrl(req, resp)  {
                 }
             })
         } else {                                                                               // if url isn't valid close connection with error message
-            resp.end("Wrong URL format")
+            resp.end(err)
         }
     })
 }
 
 app.get("/:url", (req, resp) => {                                                             // handle short-urls
     var url = req.params.url
-    MongoClient.connect("mongodb://localhost:27017/url", (err, db) => {
+    MongoClient.connect(process.env.MONGODB_URI, (err, db) => {
         if (!err && Number(url)) {                                                            // since short-urls is a number we should check that url value is valid
             db.collection("urls").find({"short-url": parseInt(url)}).toArray((err, doc) => {
                 if (!err) {
@@ -58,6 +58,7 @@ app.get("/:url", (req, resp) => {                                               
                     })
         } else {
             resp.set("Connection", "close")
+            console.log(err)
             resp.end("Wrong URL format")
         }
     })
